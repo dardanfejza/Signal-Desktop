@@ -161,11 +161,26 @@ pnpm start                                 # dev instance → ~/.config/Signal-d
 The dev instance is a separate "linked device": link it from your phone like a
 new desktop. It does **not** touch the data of an installed Signal Desktop.
 `node scripts/use-production-servers.mjs --staging` puts the dev build back
-on staging. For a packaged build use `pnpm run build` (electron-builder) —
-note the fork tracks upstream `main`, which may be ahead of the released
-client's DB schema, so don't point a packaged fork at an existing
-`~/.config/Signal` profile unless you're fine with the official client
-refusing to open it afterwards.
+on staging.
+
+### Packaged build (what's installed on the desktop)
+
+```sh
+pnpm run generate
+SIGNAL_ENV=production pnpm run build:electron --config.directories.output=release --linux AppImage
+cp release/signal-desktop_*_x86_64.AppImage ~/Applications/Signal-AI.AppImage
+```
+
+The AppImage keeps its own profile, `~/.config/Signal AppImage` (Signal's own
+`isAppImage()` rule), so it coexists with an installed Signal Desktop. A
+`.desktop` entry named **Signal AI** (`~/.local/share/applications/signal-ai.desktop`,
+icon `signal-ai`) launches it. The dev profile was copied into it once on
+2026-10-24 so the device link carried over; never run the dev instance and the
+AppImage with the same profile at the same time.
+
+Fork builds expire **180 days** after `pnpm run generate` wrote
+`config/local-production.json` (`scripts/get-expire-time.mjs`; upstream uses
+30/90). Rebuild before then. Not auto-updated.
 
 ## Tests
 
