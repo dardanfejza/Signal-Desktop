@@ -141,17 +141,24 @@ token is compared in constant time; bodies are capped at 64 KB.
 ## Running
 
 ```sh
-pnpm install && pnpm run generate   # once (and after pulling)
-pnpm start                           # dev instance → ~/.config/Signal-development
+pnpm install && pnpm run generate          # once (and after pulling)
+node scripts/use-production-servers.mjs    # once: dev build → chat.signal.org (default is STAGING,
+                                           #       which a production phone cannot link to)
+pnpm start                                 # dev instance → ~/.config/Signal-development
 ```
+
+`pnpm start` does **not** rebuild: after editing TypeScript run
+`pnpm run build:rolldown` (or keep `pnpm run dev:transpile` running), and
+`pnpm run build:styles:prod` after SCSS changes.
 
 The dev instance is a separate "linked device": link it from your phone like a
 new desktop. It does **not** touch the data of an installed Signal Desktop.
-For a packaged build use `pnpm run build` (electron-builder) — note the fork
-tracks upstream `main`, which may be ahead of the released client's DB
-schema, so don't point a packaged fork at an existing `~/.config/Signal`
-profile unless you're fine with the official client refusing to open it
-afterwards.
+`node scripts/use-production-servers.mjs --staging` puts the dev build back
+on staging. For a packaged build use `pnpm run build` (electron-builder) —
+note the fork tracks upstream `main`, which may be ahead of the released
+client's DB schema, so don't point a packaged fork at an existing
+`~/.config/Signal` profile unless you're fine with the official client
+refusing to open it afterwards.
 
 ## Tests
 
