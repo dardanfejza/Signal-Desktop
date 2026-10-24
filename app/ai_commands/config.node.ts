@@ -34,6 +34,8 @@ export type AiCommandDefinition = Readonly<{
   /** Overrides `context.messageCount` for this command when set. */
   contextMessages: number | null;
   extraInstructions: string | null;
+  /** Overrides the global `resultPrefix` for this command ("" = none). */
+  prefix: string | null;
 }>;
 
 export type LocalApiSettings = Readonly<{
@@ -45,6 +47,8 @@ export type LocalApiSettings = Readonly<{
 
 export type AiCommandsConfig = Readonly<{
   enabled: boolean;
+  /** Prepended to every generated message so it is clearly machine-written. */
+  resultPrefix: string;
   localApi: LocalApiSettings;
   llm: LlmSettings &
     Readonly<{
@@ -67,6 +71,8 @@ export type LoadedConfig = Readonly<{
   created: boolean;
   warnings: ReadonlyArray<string>;
 }>;
+
+const DEFAULT_RESULT_PREFIX = 'AI RESP: ';
 
 const DEFAULT_LLM = {
   label: 'vLLM · Qwen3.8-27B',
@@ -101,6 +107,7 @@ function defaultCommands(): Array<AiCommandDefinition> {
       contextMessages: null,
       extraInstructions:
         'Target Sean only. Punch at what he actually said or did in the chat, never at protected traits.',
+      prefix: null,
     },
     {
       id: 'hype-last',
@@ -119,6 +126,7 @@ function defaultCommands(): Array<AiCommandDefinition> {
       maxChars: 240,
       contextMessages: null,
       extraInstructions: null,
+      prefix: null,
     },
     {
       id: 'reply-for-me',
@@ -132,6 +140,7 @@ function defaultCommands(): Array<AiCommandDefinition> {
       maxChars: 400,
       contextMessages: null,
       extraInstructions: null,
+      prefix: null,
     },
     {
       id: 'catch-me-up',
@@ -145,6 +154,7 @@ function defaultCommands(): Array<AiCommandDefinition> {
       maxChars: 500,
       contextMessages: 80,
       extraInstructions: null,
+      prefix: null,
     },
   ];
 }
@@ -157,8 +167,10 @@ function defaultConfigDocument(token: string): Record<string, unknown> {
       'llm.scaleExtraBody is merged into the level-scale request only; the default turns reasoning off for that call so the picker opens fast. Set it to null for full reasoning.',
       'localApi: loopback HTTP API over this client\'s data. Auth: "Authorization: Bearer <token>" or ?token=. See docs/ai-commands.md.',
       'commands[].levels: set to null for a one-click command, or {count, default, evolving, describe} for a 1..N intensity picker.',
+      'resultPrefix is prepended to every generated message (owner decision: make AI text obvious). Per-command "prefix" overrides it; "" disables it for that command.',
     ],
     enabled: true,
+    resultPrefix: DEFAULT_RESULT_PREFIX,
     localApi: { enabled: true, host: '127.0.0.1', port: 7474, token },
     llm: { ...DEFAULT_LLM },
     context: { messageCount: 40, maxChars: 12_000, scaleTtlMs: 15 * 60_000 },
@@ -322,6 +334,7 @@ function normalizeCommand(
             `${name}.contextMessages`
           ),
     extraInstructions: asString(record.extraInstructions, '').trim() || null,
+    prefix: typeof record.prefix === 'string' ? record.prefix : null,
   };
 }
 
@@ -371,6 +384,7 @@ export function normalizeConfig(
 
   const config: AiCommandsConfig = {
     enabled: asBool(root.enabled, true),
+    resultPrefix: asString(root.resultPrefix, DEFAULT_RESULT_PREFIX),
     localApi: {
       enabled: asBool(localApiRaw.enabled, true),
       host: asString(localApiRaw.host, '127.0.0.1').trim() || '127.0.0.1',

@@ -28,6 +28,7 @@ menu opens it. `userData` is `~/.config/Signal/` for a packaged build and
 ```jsonc
 {
   "enabled": true,
+  "resultPrefix": "AI RESP: ", // prepended to every generated message; per-command "prefix" overrides, "" disables
   "localApi": {
     "enabled": true,
     "host": "127.0.0.1",
@@ -99,8 +100,14 @@ menu opens it. `userData` is `~/.config/Signal/` for a packaged build and
    grounded in the transcript. A malformed reply falls back to a generic
    scale and the picker footer says so.
 4. One model call builds the message (`buildCommandPrompt`), `<think>` blocks
-   and wrapping quotes/fences are stripped, and the text is put into the
-   composer (`autoSend: true` submits it).
+   and wrapping quotes/fences are stripped, `resultPrefix` ("AI RESP: " by
+   default) is prepended, and the text is put into the composer
+   (`autoSend: true` submits it).
+
+The level picker is a single popover: one row of numbered chips, a preview
+line for the hovered/focused level, click or Enter to write; arrow keys and
+digit keys move the preview. Its caption says how many messages the scale
+was written from, or that the chat is still empty.
 
 Logs (`ai-commands` logger) are body-free: prompt/output lengths, durations,
 message counts, status codes.

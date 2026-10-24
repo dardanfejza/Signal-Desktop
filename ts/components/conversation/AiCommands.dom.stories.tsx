@@ -81,6 +81,7 @@ async function getLevelScale(
     conversationId,
     generatedAt: Date.now(),
     source: 'model',
+    messageCount: 23,
     levels: TITLES.map((title, index) => ({
       level: index + 1,
       title,

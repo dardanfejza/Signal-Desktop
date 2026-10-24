@@ -44,6 +44,8 @@ export type AiLevelScale = Readonly<{
   levels: ReadonlyArray<AiLevelDescriptor>;
   generatedAt: number;
   source: 'model' | 'fallback';
+  /** How many chat messages the scale was written from (0 = empty chat). */
+  messageCount: number;
 }>;
 
 export type AiRunResult =

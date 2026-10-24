@@ -32,6 +32,8 @@ describe('ai_commands/config', () => {
     assert.isAtLeast(loaded.config.localApi.token.length, 32);
     assert.strictEqual(loaded.config.localApi.host, '127.0.0.1');
     assert.strictEqual(loaded.config.llm.model, 'Qwen3.8-27B');
+    assert.strictEqual(loaded.config.resultPrefix, 'AI RESP: ');
+    assert.isNull(loaded.config.commands[0]?.prefix);
     assert.strictEqual(loaded.config.llm.apiKey, '');
     assert.notInclude(loaded.config.llm.baseUrl, ':3000');
     const insult = loaded.config.commands.find(c => c.id === 'insult-sean');
@@ -50,7 +52,7 @@ describe('ai_commands/config', () => {
         localApi: { port: 99999, host: '0.0.0.0' },
         llm: { baseUrl: 'ftp://nope', timeoutMs: 'soon' },
         commands: [
-          { id: 'ok', prompt: 'do it', levels: 5 },
+          { id: 'ok', prompt: 'do it', levels: 5, prefix: '' },
           { id: 'dup', prompt: 'a' },
           { id: 'dup', prompt: 'b' },
           { id: 'bad id!', prompt: 'c' },
@@ -79,6 +81,7 @@ describe('ai_commands/config', () => {
       describe: 'intensity',
     });
     assert.strictEqual(config.commands[2]?.levels?.default, 3);
+    assert.strictEqual(config.commands[0]?.prefix, '');
     assert.isFalse(config.commands[2]?.levels?.evolving);
     assert.isTrue(warnings.some(w => w.includes('not loopback')));
     assert.isTrue(warnings.some(w => w.includes('duplicate id "dup"')));

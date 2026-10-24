@@ -67,6 +67,7 @@ function makeHandlers(
       levels: [],
       generatedAt: 0,
       source: 'fallback' as const,
+      messageCount: 0,
     }),
     runCommand: async (commandId, conversationId, level) => ({
       ok: true as const,

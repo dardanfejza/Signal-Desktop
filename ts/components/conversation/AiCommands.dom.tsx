@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { memo, useCallback, useMemo, useState, type JSX } from 'react';
-import classNames from 'classnames';
 
 import { AxoDropdownMenu } from '../../axo/AxoDropdownMenu.dom.tsx';
 import { AxoIconButton } from '../../axo/AxoIconButton.dom.tsx';
@@ -11,10 +10,10 @@ import { _getAllAxoSymbolNames } from '../../axo/_internal/AxoSymbolDefs.generat
 import type { LocalizerType } from '../../types/Util.std.ts';
 import type {
   AiCommandSummary,
-  AiLevelDescriptor,
   AiLevelScale,
   AiRunResult,
 } from '../../ai/types.std.ts';
+import { AiLevelPicker } from './AiLevelPicker.dom.tsx';
 
 export type AiCommandsProps = Readonly<{
   i18n: LocalizerType;
@@ -51,86 +50,6 @@ function resolveSymbol(
   return symbolNames.has(name) ? (name as AxoSymbol.Name) : fallback;
 }
 
-type ScaleState =
-  | { status: 'loading' }
-  | { status: 'ready'; scale: AiLevelScale };
-
-function placeholderLevels(
-  i18n: LocalizerType,
-  count: number
-): ReadonlyArray<AiLevelDescriptor> {
-  return Array.from({ length: count }, (_, index) => ({
-    level: index + 1,
-    title: i18n('icu:AiCommands__level-placeholder', {
-      level: String(index + 1),
-    }),
-    description: i18n('icu:AiCommands__level-loading'),
-  }));
-}
-
-type LevelItemsProps = Readonly<{
-  i18n: LocalizerType;
-  command: AiCommandSummary;
-  scaleState: ScaleState | undefined;
-  disabled: boolean;
-  onPick: (level: number) => void;
-}>;
-
-const LevelItems = memo(function LevelItems({
-  i18n,
-  command,
-  scaleState,
-  disabled,
-  onPick,
-}: LevelItemsProps): JSX.Element | null {
-  const { levels } = command;
-  if (!levels) {
-    return null;
-  }
-  const ready = scaleState?.status === 'ready' ? scaleState.scale : null;
-  const entries = ready?.levels ?? placeholderLevels(i18n, levels.count);
-  let footer: string;
-  if (!ready) {
-    footer = i18n('icu:AiCommands__level-loading');
-  } else if (ready.source === 'model') {
-    footer = i18n('icu:AiCommands__scale-model');
-  } else {
-    footer = i18n('icu:AiCommands__scale-generic');
-  }
-  return (
-    <>
-      <AxoDropdownMenu.Label>
-        {command.label}
-        {levels.describe ? ` · ${levels.describe}` : ''}
-      </AxoDropdownMenu.Label>
-      {entries.map(entry => (
-        <AxoDropdownMenu.Item
-          key={entry.level}
-          disabled={disabled}
-          onSelect={() => onPick(entry.level)}
-        >
-          <span
-            className={classNames('AiCommands__level', {
-              'AiCommands__level--default': entry.level === levels.default,
-            })}
-          >
-            <span className="AiCommands__level-number">{entry.level}</span>
-            <span className="AiCommands__level-text">
-              <span className="AiCommands__level-title">{entry.title}</span>
-              {entry.description ? (
-                <span className="AiCommands__level-desc">
-                  {entry.description}
-                </span>
-              ) : null}
-            </span>
-          </span>
-        </AxoDropdownMenu.Item>
-      ))}
-      <div className="AiCommands__footer">{footer}</div>
-    </>
-  );
-});
-
 export const AiCommands = memo(function AiCommands({
   i18n,
   conversationId,
@@ -143,9 +62,11 @@ export const AiCommands = memo(function AiCommands({
   onError,
 }: AiCommandsProps): JSX.Element | null {
   const [runningId, setRunningId] = useState<string | null>(null);
-  // Scales are per conversation AND command, so switching chats never shows
-  // another chat's scale.
-  const [scales, setScales] = useState<Record<string, ScaleState>>({});
+  // Which leveled command's picker is open (at most one at a time).
+  const [pickerId, setPickerId] = useState<string | null>(null);
+  // Scales are keyed per conversation AND command, so switching chats never
+  // shows another chat's scale. `null` = request in flight.
+  const [scales, setScales] = useState<Record<string, AiLevelScale | null>>({});
   const scaleKey = useCallback(
     (command: AiCommandSummary) => `${conversationId}|${command.id}`,
     [conversationId]
@@ -159,11 +80,11 @@ export const AiCommands = memo(function AiCommands({
       const key = scaleKey(command);
       let alreadyRequested = false;
       setScales(previous => {
-        if (previous[key]) {
+        if (key in previous) {
           alreadyRequested = true;
           return previous;
         }
-        return { ...previous, [key]: { status: 'loading' } };
+        return { ...previous, [key]: null };
       });
       if (alreadyRequested) {
         return;
@@ -171,10 +92,7 @@ export const AiCommands = memo(function AiCommands({
       const load = async () => {
         try {
           const scale = await getLevelScale(command.id, conversationId);
-          setScales(previous => ({
-            ...previous,
-            [key]: { status: 'ready', scale },
-          }));
+          setScales(previous => ({ ...previous, [key]: scale }));
         } catch {
           // Picking a level still works: the main process falls back to a
           // generic scale when running the command.
@@ -215,23 +133,32 @@ export const AiCommands = memo(function AiCommands({
     [conversationId, onError, onResult, runCommand, runningId]
   );
 
+  const openPicker = useCallback(
+    (command: AiCommandSummary) => {
+      ensureScale(command);
+      setPickerId(command.id);
+    },
+    [ensureScale]
+  );
+
+  const activate = useCallback(
+    (command: AiCommandSummary) => {
+      if (command.levels) {
+        openPicker(command);
+      } else {
+        run(command, null);
+      }
+    },
+    [openPicker, run]
+  );
+
   const pinned = useMemo(
     () => commands.filter(command => command.pinned),
     [commands]
   );
-
-  const handleMenuOpenChange = useCallback(
-    (open: boolean) => {
-      if (!open) {
-        return;
-      }
-      for (const command of commands) {
-        if (command.levels?.evolving) {
-          ensureScale(command);
-        }
-      }
-    },
-    [commands, ensureScale]
+  const pickerCommand = useMemo(
+    () => commands.find(command => command.id === pickerId) ?? null,
+    [commands, pickerId]
   );
 
   if (commands.length === 0) {
@@ -240,109 +167,52 @@ export const AiCommands = memo(function AiCommands({
 
   const busy = runningId != null;
   const menuLabel = i18n('icu:AiCommands__menu-label');
+  const menuIsRunning =
+    busy && !pinned.some(command => command.id === runningId);
 
-  return (
+  const buttons = (
     <div className="AiCommands">
       {pinned.map(command => {
-        const symbol = resolveSymbol(command.symbol, DEFAULT_COMMAND_SYMBOL);
         const isRunning = runningId === command.id;
-        if (!command.levels) {
-          return (
-            <AxoIconButton.Root
-              key={command.id}
-              symbol={symbol}
-              variant="implied-secondary"
-              size="md"
-              label={
-                isRunning ? i18n('icu:AiCommands__pending') : command.label
-              }
-              pending={isRunning}
-              disabled={busy && !isRunning}
-              onClick={() => run(command, null)}
-            />
-          );
-        }
         return (
-          <AxoDropdownMenu.Root
+          <AxoIconButton.Root
             key={command.id}
-            onOpenChange={open => {
-              if (open) {
-                ensureScale(command);
-              }
-            }}
-          >
-            <AxoDropdownMenu.Trigger disabled={busy && !isRunning}>
-              <AxoIconButton.Root
-                symbol={symbol}
-                variant="implied-secondary"
-                size="md"
-                label={
-                  isRunning ? i18n('icu:AiCommands__pending') : command.label
-                }
-                pending={isRunning}
-                disabled={busy && !isRunning}
-              />
-            </AxoDropdownMenu.Trigger>
-            <AxoDropdownMenu.Content side="top" align="end">
-              <LevelItems
-                i18n={i18n}
-                command={command}
-                scaleState={scales[scaleKey(command)]}
-                disabled={busy}
-                onPick={level => run(command, level)}
-              />
-            </AxoDropdownMenu.Content>
-          </AxoDropdownMenu.Root>
+            symbol={resolveSymbol(command.symbol, DEFAULT_COMMAND_SYMBOL)}
+            variant="implied-secondary"
+            size="md"
+            label={isRunning ? i18n('icu:AiCommands__pending') : command.label}
+            pending={isRunning}
+            pressed={pickerId === command.id}
+            disabled={busy && !isRunning}
+            onClick={() => activate(command)}
+          />
         );
       })}
-      <AxoDropdownMenu.Root onOpenChange={handleMenuOpenChange}>
+      <AxoDropdownMenu.Root>
         <AxoDropdownMenu.Trigger>
           <AxoIconButton.Root
             symbol={MENU_SYMBOL}
             variant="implied-secondary"
             size="md"
-            label={busy ? i18n('icu:AiCommands__pending') : menuLabel}
-            pending={busy && !pinned.some(command => command.id === runningId)}
+            label={menuIsRunning ? i18n('icu:AiCommands__pending') : menuLabel}
+            pending={menuIsRunning}
           />
         </AxoDropdownMenu.Trigger>
         <AxoDropdownMenu.Content side="top" align="end">
           <AxoDropdownMenu.Label>
             {providerLabel ? `${menuLabel} · ${providerLabel}` : menuLabel}
           </AxoDropdownMenu.Label>
-          {commands.map(command => {
-            const symbol = resolveSymbol(
-              command.symbol,
-              DEFAULT_COMMAND_SYMBOL
-            );
-            if (!command.levels) {
-              return (
-                <AxoDropdownMenu.Item
-                  key={command.id}
-                  symbol={symbol}
-                  disabled={busy}
-                  onSelect={() => run(command, null)}
-                >
-                  {command.label}
-                </AxoDropdownMenu.Item>
-              );
-            }
-            return (
-              <AxoDropdownMenu.Sub key={command.id}>
-                <AxoDropdownMenu.SubTrigger disabled={busy}>
-                  {command.label}
-                </AxoDropdownMenu.SubTrigger>
-                <AxoDropdownMenu.SubContent>
-                  <LevelItems
-                    i18n={i18n}
-                    command={command}
-                    scaleState={scales[scaleKey(command)]}
-                    disabled={busy}
-                    onPick={level => run(command, level)}
-                  />
-                </AxoDropdownMenu.SubContent>
-              </AxoDropdownMenu.Sub>
-            );
-          })}
+          {commands.map(command => (
+            <AxoDropdownMenu.Item
+              key={command.id}
+              symbol={resolveSymbol(command.symbol, DEFAULT_COMMAND_SYMBOL)}
+              disabled={busy}
+              onSelect={() => activate(command)}
+            >
+              {command.label}
+              {command.levels ? ` · 1–${command.levels.count}` : ''}
+            </AxoDropdownMenu.Item>
+          ))}
           <AxoDropdownMenu.Separator />
           <AxoDropdownMenu.Item symbol="settings" onSelect={openConfig}>
             {i18n('icu:AiCommands__edit')}
@@ -350,5 +220,27 @@ export const AiCommands = memo(function AiCommands({
         </AxoDropdownMenu.Content>
       </AxoDropdownMenu.Root>
     </div>
+  );
+
+  if (!pickerCommand?.levels) {
+    return buttons;
+  }
+
+  return (
+    <AiLevelPicker
+      i18n={i18n}
+      command={pickerCommand}
+      scale={scales[scaleKey(pickerCommand)] ?? undefined}
+      open={pickerId === pickerCommand.id}
+      disabled={busy}
+      onOpenChange={open => {
+        if (!open) {
+          setPickerId(null);
+        }
+      }}
+      onPick={level => run(pickerCommand, level)}
+    >
+      {buttons}
+    </AiLevelPicker>
   );
 });

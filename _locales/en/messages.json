@@ -12193,10 +12193,6 @@
     "messageformat": "Level {level}",
     "description": "Composer > AI commands > placeholder title for an intensity level before the model has named it"
   },
-  "icu:AiCommands__scale-model": {
-    "messageformat": "Scale written from this chat's recent messages",
-    "description": "Composer > AI commands > footer of the level picker when the model produced the descriptions"
-  },
   "icu:AiCommands__scale-generic": {
     "messageformat": "Generic scale (model unavailable)",
     "description": "Composer > AI commands > footer of the level picker when a fallback scale is shown"
@@ -12208,5 +12204,13 @@
   "icu:AiCommands__toast-failed": {
     "messageformat": "AI command failed: {error}",
     "description": "Toast shown when an AI command could not be completed. {error} is the technical reason."
+  },
+  "icu:AiCommands__scale-from-messages": {
+    "messageformat": "From the last {count, plural, one {# message} other {# messages}} here · Enter to write",
+    "description": "Composer > AI commands > caption under the intensity picker when the model wrote the levels from the recent conversation"
+  },
+  "icu:AiCommands__scale-empty": {
+    "messageformat": "No messages in this chat yet, so the scale is a guess",
+    "description": "Composer > AI commands > caption under the intensity picker when the chat had no messages to ground the scale in"
   }
 }

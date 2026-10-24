@@ -245,6 +245,7 @@ export class AiCommandsService {
         levels: fallbackScale(levels.count, levels.describe),
         generatedAt: Date.now(),
         source: 'fallback',
+        messageCount: 0,
       };
     }
 
@@ -289,6 +290,7 @@ export class AiCommandsService {
           levels: parsed ?? fallbackScale(levels.count, levels.describe),
           generatedAt: Date.now(),
           source: parsed ? 'model' : 'fallback',
+          messageCount: ctx.included,
         };
         log.info(
           `level scale for ${commandId}: source=${scale.source} promptChars=${prompt.length} outChars=${reply.text.length} durationMs=${reply.durationMs} messages=${ctx.included}`
@@ -303,6 +305,7 @@ export class AiCommandsService {
           levels: fallbackScale(levels.count, levels.describe),
           generatedAt: Date.now(),
           source: 'fallback',
+          messageCount: ctx.included,
         };
       }
       if (this.#scaleCache.size >= SCALE_CACHE_MAX) {
@@ -365,7 +368,9 @@ export class AiCommandsService {
         extraInstructions: command.extraInstructions,
       });
       const reply = await chatCompletion(this.#loaded.config.llm, prompt);
-      const text = cleanReply(reply.text);
+      const prefix = command.prefix ?? this.#loaded.config.resultPrefix;
+      const generated = cleanReply(reply.text);
+      const text = generated ? `${prefix}${generated}` : '';
       log.info(
         `run ${commandId} level=${level ?? '-'} promptChars=${prompt.length} outChars=${text.length} durationMs=${reply.durationMs} messages=${ctx.included}`
       );
