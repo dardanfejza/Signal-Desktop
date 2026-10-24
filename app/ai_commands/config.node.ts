@@ -72,7 +72,7 @@ export type LoadedConfig = Readonly<{
   warnings: ReadonlyArray<string>;
 }>;
 
-const DEFAULT_RESULT_PREFIX = 'AI RESP: ';
+const DEFAULT_RESULT_PREFIX = '<AI RESP>\n';
 
 const DEFAULT_LLM = {
   label: 'vLLM · Qwen3.8-27B',

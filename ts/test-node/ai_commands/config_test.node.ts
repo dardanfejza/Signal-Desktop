@@ -32,7 +32,7 @@ describe('ai_commands/config', () => {
     assert.isAtLeast(loaded.config.localApi.token.length, 32);
     assert.strictEqual(loaded.config.localApi.host, '127.0.0.1');
     assert.strictEqual(loaded.config.llm.model, 'Qwen3.8-27B');
-    assert.strictEqual(loaded.config.resultPrefix, 'AI RESP: ');
+    assert.strictEqual(loaded.config.resultPrefix, '<AI RESP>\n');
     assert.isNull(loaded.config.commands[0]?.prefix);
     assert.strictEqual(loaded.config.llm.apiKey, '');
     assert.notInclude(loaded.config.llm.baseUrl, ':3000');

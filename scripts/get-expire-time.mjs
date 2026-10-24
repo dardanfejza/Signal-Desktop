@@ -14,7 +14,10 @@ const isNotUpdatable = !parseVersion(packageJson.version).isUpdatable;
 
 // NB: Build expirations are also determined via users' auto-update settings; see
 // getExpirationTimestamp
-const validDuration = isNotUpdatable ? DAY * 30 : DAY * 90;
+// Fork: self-built, never auto-updated, so give a build half a year before it
+// refuses to start (upstream: 30 days for non-updatable builds, 90 otherwise).
+// Rebuild before then — the Signal servers also retire old clients eventually.
+const validDuration = DAY * 180;
 const buildExpiration = buildCreation + validDuration;
 
 const localProductionPath = join(
