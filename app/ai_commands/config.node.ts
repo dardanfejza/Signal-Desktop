@@ -69,16 +69,17 @@ export type LoadedConfig = Readonly<{
 }>;
 
 const DEFAULT_LLM = {
-  label: 'MrHuang',
-  baseUrl: 'http://100.117.221.48:3000/v1',
+  label: 'vLLM · Qwen3.8-27B',
+  baseUrl: 'http://100.117.221.48:8000/v1',
   apiKey: '',
-  model: 'mrhuang',
+  model: 'Qwen3.8-27B',
   timeoutMs: 180_000,
   systemPrompt: '',
   maxOutputTokens: null,
   temperature: null,
   extraBody: null,
-  scaleExtraBody: null,
+  // The 1..N scale is a UI popover; skip reasoning there (95 s → seconds).
+  scaleExtraBody: { chat_template_kwargs: { enable_thinking: false } },
 } satisfies AiCommandsConfig['llm'];
 
 function defaultCommands(): Array<AiCommandDefinition> {
@@ -152,8 +153,8 @@ function defaultConfigDocument(token: string): Record<string, unknown> {
   return {
     _help: [
       'AI commands for the Signal Desktop fork. Edit and save; the app reloads it live.',
-      'llm.baseUrl: any OpenAI-compatible /v1. MrHuang companion: http://<truenas>:3000/v1 with model "mrhuang" and apiKey = API_TOKEN.',
-      'Raw vLLM instead: baseUrl http://<truenas>:8000/v1, model "Qwen3.8-27B", apiKey "". Speed up the 1..N scale call with llm.scaleExtraBody = {"chat_template_kwargs": {"enable_thinking": false}} (raw vLLM only; MrHuang ignores generation params).',
+      'llm.baseUrl: any OpenAI-compatible /v1. Default is the raw vLLM engine (stateless, nothing is remembered). Deliberately NOT the MrHuang companion /v1 — that would write every run into his memory thread.',
+      'llm.scaleExtraBody is merged into the level-scale request only; the default turns reasoning off for that call so the picker opens fast. Set it to null for full reasoning.',
       'localApi: loopback HTTP API over this client\'s data. Auth: "Authorization: Bearer <token>" or ?token=. See docs/ai-commands.md.',
       'commands[].levels: set to null for a one-click command, or {count, default, evolving, describe} for a 1..N intensity picker.',
     ],

@@ -31,7 +31,9 @@ describe('ai_commands/config', () => {
     assert.isTrue(loaded.config.enabled);
     assert.isAtLeast(loaded.config.localApi.token.length, 32);
     assert.strictEqual(loaded.config.localApi.host, '127.0.0.1');
-    assert.strictEqual(loaded.config.llm.model, 'mrhuang');
+    assert.strictEqual(loaded.config.llm.model, 'Qwen3.8-27B');
+    assert.strictEqual(loaded.config.llm.apiKey, '');
+    assert.notInclude(loaded.config.llm.baseUrl, ':3000');
     const insult = loaded.config.commands.find(c => c.id === 'insult-sean');
     assert.isDefined(insult);
     assert.strictEqual(insult?.levels?.count, 10);

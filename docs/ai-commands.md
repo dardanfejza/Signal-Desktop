@@ -35,14 +35,16 @@ menu opens it. `userData` is `~/.config/Signal/` for a packaged build and
     "token": "<generated>",
   },
   "llm": {
-    "label": "MrHuang",
-    "baseUrl": "http://100.117.221.48:3000/v1", // MrHuang companion /v1 shim
-    "apiKey": "", // = API_TOKEN from app/.env
-    "model": "mrhuang",
+    "label": "vLLM · Qwen3.8-27B",
+    "baseUrl": "http://100.117.221.48:8000/v1", // raw vLLM engine, stateless
+    "apiKey": "", // vLLM has no auth on the LAN
+    "model": "Qwen3.8-27B", // the id vLLM advertises on /v1/models
     "timeoutMs": 180000,
-    "systemPrompt": "", // ignored by MrHuang; honored by raw vLLM
+    "systemPrompt": "",
     "maxOutputTokens": null,
     "temperature": null,
+    "extraBody": null, // merged into every request body
+    "scaleExtraBody": { "chat_template_kwargs": { "enable_thinking": false } }, // level-scale call only
   },
   "context": { "messageCount": 40, "maxChars": 12000, "scaleTtlMs": 900000 },
   "commands": [
@@ -67,11 +69,17 @@ menu opens it. `userData` is `~/.config/Signal/` for a packaged build and
 }
 ```
 
-- **Raw vLLM instead of MrHuang:** `baseUrl: "http://100.117.221.48:8000/v1"`,
-  `model: "Qwen3.8-27B"` (the id vLLM advertises on `/v1/models`), `apiKey: ""`. The raw engine is stateless;
-  MrHuang's `/v1` lands every run in the owner's shared companion thread and
-  only reads the last `user` message, which is why the whole prompt is a single
-  user message.
+- **Why raw vLLM and not MrHuang's `/v1`:** the companion shim writes every
+  run into the owner's shared companion thread (and may extract memories from
+  it). The raw engine is stateless, so nothing from these commands reaches
+  MrHuang. The prompt is still a single `user` message, so pointing `baseUrl`
+  at `http://100.117.221.48:3000/v1` with `model: "mrhuang"` and
+  `apiKey: <API_TOKEN>` would work if you ever wanted that.
+- **Latency:** the level scale is one extra model call. With reasoning on it
+  took ~95 s on the live box, which is why the default `scaleExtraBody` turns
+  thinking off for that call only; the command itself keeps full reasoning
+  (~17 s measured). The scale is cached per chat until a new message arrives
+  or `scaleTtlMs` passes.
 - `levels: null` (or omit it) makes a one-click command. `levels: 10` is
   shorthand for a 10-step evolving scale.
 - The LLM API key and the local API token never reach the renderer; the UI

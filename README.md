@@ -6,7 +6,7 @@
 This is a fork of Signal Desktop that adds preset AI command buttons next to the
 microphone (e.g. "Insult Sean", level 1–10 with a scale the model writes from the
 recent conversation) backed by any OpenAI-compatible endpoint — by default the
-MrHuang companion on the home LAN — plus a token-gated loopback HTTP API over the
+raw vLLM engine on the home LAN (MrHuang itself is kept out of it) — plus a token-gated loopback HTTP API over the
 conversations this client can see. See [docs/ai-commands.md](docs/ai-commands.md).
 
 # Signal Desktop
