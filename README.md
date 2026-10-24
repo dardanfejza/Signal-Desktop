@@ -1,6 +1,14 @@
 <!-- Copyright 2014 Signal Messenger, LLC -->
 <!-- SPDX-License-Identifier: AGPL-3.0-only -->
 
+## Fork: AI commands + local API
+
+This is a fork of Signal Desktop that adds preset AI command buttons next to the
+microphone (e.g. "Insult Sean", level 1–10 with a scale the model writes from the
+recent conversation) backed by any OpenAI-compatible endpoint — by default the
+MrHuang companion on the home LAN — plus a token-gated loopback HTTP API over the
+conversations this client can see. See [docs/ai-commands.md](docs/ai-commands.md).
+
 # Signal Desktop
 
 Signal Desktop links with Signal on [Android](https://github.com/signalapp/Signal-Android) or [iOS](https://github.com/signalapp/Signal-iOS) and lets you message from your Windows, macOS, and Linux computers.

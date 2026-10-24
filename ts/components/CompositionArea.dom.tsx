@@ -45,6 +45,14 @@ import { isImageAttachment, isVoiceMessage } from '../util/Attachment.std.ts';
 import { isViewOnceEligible } from '../util/viewOnceEligibility.std.ts';
 import type { AciString } from '../types/ServiceId.std.ts';
 import { AudioCapture } from './conversation/AudioCapture.dom.tsx';
+import { AiCommands } from './conversation/AiCommands.dom.tsx';
+import type {
+  AiCommandSummary,
+  AiComposeRequest,
+  AiLevelScale,
+  AiRunResult,
+} from '../ai/types.std.ts';
+import { ToastType } from '../types/Toast.dom.tsx';
 import { CompositionUpload } from './CompositionUpload.dom.tsx';
 import type {
   ConversationRemovalStage,
@@ -146,6 +154,22 @@ export type OwnProps = Readonly<{
   platform: string;
   textIncludesRecoveryKey: (text: string) => boolean;
   showToast: ShowToastAction;
+  // Fork feature: AI command presets next to the mic (all optional).
+  aiCommands?: ReadonlyArray<AiCommandSummary> | null;
+  aiProviderLabel?: string | null;
+  getAiLevelScale?: (
+    commandId: string,
+    conversationId: string
+  ) => Promise<AiLevelScale>;
+  runAiCommand?: (
+    commandId: string,
+    conversationId: string,
+    level: number | null
+  ) => Promise<AiRunResult>;
+  openAiConfig?: () => void;
+  subscribeAiCompose?: (
+    callback: (request: AiComposeRequest) => void
+  ) => () => void;
   processAttachments: (options: {
     conversationId: string;
     files: ReadonlyArray<File>;
@@ -276,6 +300,12 @@ export const CompositionArea = memo(function CompositionArea({
   setQuoteByMessageId,
   shouldHidePopovers,
   showToast,
+  aiCommands = null,
+  aiProviderLabel = null,
+  getAiLevelScale,
+  runAiCommand,
+  openAiConfig,
+  subscribeAiCompose,
   theme,
 
   // AttachmentList
@@ -801,6 +831,72 @@ export const CompositionArea = memo(function CompositionArea({
       {mediaQualitySelectorFragment}
     </>
   );
+
+  const insertAiText = useCallback(
+    (text: string, send: boolean) => {
+      const api = inputApiRef.current;
+      if (!api) {
+        return;
+      }
+      api.setContents(text, undefined, true);
+      setComposerFocus(conversationId);
+      if (send) {
+        api.submit();
+      }
+    },
+    [conversationId, setComposerFocus]
+  );
+
+  const handleAiResult = useCallback(
+    (text: string, { autoSend }: { autoSend: boolean }) => {
+      insertAiText(text, autoSend);
+    },
+    [insertAiText]
+  );
+
+  const handleAiError = useCallback(
+    (error: string) => {
+      showToast({
+        toastType: ToastType.AiCommandFailed,
+        parameters: { error },
+      });
+    },
+    [showToast]
+  );
+
+  useEffect(() => {
+    if (!subscribeAiCompose) {
+      return undefined;
+    }
+    return subscribeAiCompose(request => {
+      if (request.conversationId !== conversationId) {
+        return;
+      }
+      insertAiText(request.text, request.send);
+    });
+  }, [subscribeAiCompose, conversationId, insertAiText]);
+
+  const aiFragment =
+    aiCommands &&
+    aiCommands.length > 0 &&
+    getAiLevelScale &&
+    runAiCommand &&
+    openAiConfig &&
+    draftEditMessage == null ? (
+      <div className="CompositionArea__button-cell">
+        <AiCommands
+          i18n={i18n}
+          conversationId={conversationId}
+          commands={aiCommands}
+          providerLabel={aiProviderLabel}
+          getLevelScale={getAiLevelScale}
+          runCommand={runAiCommand}
+          openConfig={openAiConfig}
+          onResult={handleAiResult}
+          onError={handleAiError}
+        />
+      </div>
+    ) : null;
 
   const micButtonFragment = shouldShowMicrophone ? (
     <div className="CompositionArea__button-cell">
@@ -1350,6 +1446,7 @@ export const CompositionArea = memo(function CompositionArea({
         )}
         {!isViewOnceActive && !large && (
           <>
+            {aiFragment}
             {!dirty ? micButtonFragment : null}
             {editMessageFragment}
             {composerAddMenuButton}
@@ -1365,6 +1462,7 @@ export const CompositionArea = memo(function CompositionArea({
         >
           {leftHandSideButtonsFragment}
           {composerAddMenuButton}
+          {aiFragment}
           {!dirty ? micButtonFragment : null}
           {editMessageFragment}
           {dirty || !shouldShowMicrophone ? sendButtonFragment : null}

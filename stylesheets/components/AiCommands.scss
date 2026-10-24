@@ -1,0 +1,91 @@
+// Copyright 2026 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+@use '../mixins';
+@use '../variables';
+
+.AiCommands {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+}
+
+.AiCommands__level {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 360px;
+
+  &--default .AiCommands__level-number {
+    @include mixins.light-theme {
+      background: variables.$color-ultramarine;
+      color: variables.$color-white;
+    }
+    @include mixins.dark-theme {
+      background: variables.$color-ultramarine-light;
+      color: variables.$color-gray-90;
+    }
+  }
+}
+
+.AiCommands__level-number {
+  flex-shrink: 0;
+  min-width: 22px;
+  height: 22px;
+  border-radius: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+
+  @include mixins.light-theme {
+    background: variables.$color-gray-05;
+    color: variables.$color-gray-90;
+  }
+  @include mixins.dark-theme {
+    background: variables.$color-gray-75;
+    color: variables.$color-gray-05;
+  }
+}
+
+.AiCommands__level-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.AiCommands__level-title {
+  font-weight: 500;
+}
+
+.AiCommands__level-desc {
+  font-size: 12px;
+  line-height: 16px;
+  white-space: normal;
+
+  @include mixins.light-theme {
+    color: variables.$color-gray-60;
+  }
+  @include mixins.dark-theme {
+    color: variables.$color-gray-25;
+  }
+}
+
+.AiCommands__footer {
+  padding-block: 4px 6px;
+  padding-inline: 12px;
+  font-size: 11px;
+
+  @include mixins.light-theme {
+    color: variables.$color-gray-45;
+  }
+  @include mixins.dark-theme {
+    color: variables.$color-gray-45;
+  }
+}

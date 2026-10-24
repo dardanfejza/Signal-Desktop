@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 export enum ToastType {
+  AiCommandFailed = 'AiCommandFailed',
   AddingUserToGroup = 'AddingUserToGroup',
   AddedUsersToCall = 'AddedUsersToCall',
   AlreadyGroupMember = 'AlreadyGroupMember',
@@ -108,6 +109,7 @@ export enum ToastType {
 }
 
 export type AnyToast =
+  | { toastType: ToastType.AiCommandFailed; parameters: { error: string } }
   | { toastType: ToastType.AddingUserToGroup; parameters: { contact: string } }
   | {
       toastType: ToastType.AddedUsersToCall;

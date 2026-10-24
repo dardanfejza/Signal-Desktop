@@ -1,9 +1,18 @@
 // Copyright 2019 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { useCallback, useMemo, memo } from 'react';
+import { useCallback, useEffect, useMemo, memo } from 'react';
 import { useSelector } from 'react-redux';
 import { CompositionArea } from '../../components/CompositionArea.dom.tsx';
+import {
+  getAiLevelScale,
+  openAiConfig,
+  runAiCommand,
+  setAiActiveConversation,
+  subscribeAiCompose,
+  useAiCommandsConfig,
+} from '../../ai/ipc.preload.ts';
+import { drop } from '../../util/drop.std.ts';
 import { useContactNameData } from '../../components/conversation/ContactName.dom.tsx';
 import type {
   DraftBodyRanges,
@@ -159,6 +168,17 @@ export const SmartCompositionArea = memo(function SmartCompositionArea({
   strictAssert(conversationName, 'conversationName is required');
   const addedByName = useContactNameData(addedBy);
 
+  const aiConfig = useAiCommandsConfig();
+  useEffect(() => {
+    setAiActiveConversation(id);
+    return () => {
+      setAiActiveConversation(null);
+    };
+  }, [id]);
+  const handleOpenAiConfig = useCallback(() => {
+    drop(openAiConfig());
+  }, []);
+
   const hydratedDraftBodyRanges = useMemo(() => {
     return hydrateRanges(draftBodyRanges, conversationSelector);
   }, [conversationSelector, draftBodyRanges]);
@@ -269,6 +289,12 @@ export const SmartCompositionArea = memo(function SmartCompositionArea({
     <CompositionArea
       // Base
       conversationId={id}
+      aiCommands={aiConfig?.enabled ? aiConfig.commands : null}
+      aiProviderLabel={aiConfig?.providerLabel ?? null}
+      getAiLevelScale={getAiLevelScale}
+      runAiCommand={runAiCommand}
+      openAiConfig={handleOpenAiConfig}
+      subscribeAiCompose={subscribeAiCompose}
       draftBodyRanges={hydratedDraftBodyRanges ?? null}
       draftEditMessage={draftEditMessage ?? null}
       draftText={conversation.draftText ?? null}

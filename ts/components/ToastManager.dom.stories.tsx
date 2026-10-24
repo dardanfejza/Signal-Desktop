@@ -20,6 +20,11 @@ const { i18n } = window.SignalContext;
 
 function getToast(toastType: ToastType): AnyToast {
   switch (toastType) {
+    case ToastType.AiCommandFailed:
+      return {
+        toastType: ToastType.AiCommandFailed,
+        parameters: { error: 'LLM returned HTTP 401' },
+      };
     case ToastType.AddingUserToGroup:
       return { toastType, parameters: { contact: 'Sam Mirete' } };
     case ToastType.AddedUsersToCall:

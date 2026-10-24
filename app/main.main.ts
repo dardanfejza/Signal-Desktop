@@ -103,6 +103,7 @@ import * as ephemeralConfig from './ephemeral_config.main.ts';
 import * as mainProcessLogging from '../ts/logging/main_process_logging.main.ts';
 import { MainSQL } from '../ts/sql/main.main.ts';
 import * as sqlChannels from './sql_channel.main.ts';
+import { initializeAiCommands } from './ai_commands/service.main.ts';
 import * as windowState from './window_state.std.ts';
 import type { CreateTemplateOptionsType } from './menu.std.ts';
 import { createTemplate } from './menu.std.ts';
@@ -2485,6 +2486,17 @@ app.on('ready', async () => {
   }
 
   ready = true;
+
+  // Fork feature: AI command presets + loopback API over this client's data.
+  try {
+    await initializeAiCommands({
+      sql,
+      userDataPath: app.getPath('userData'),
+      getMainWindow,
+    });
+  } catch (err) {
+    log.error('AI commands failed to initialize:', Errors.toLogFormat(err));
+  }
 
   setupMenu();
 

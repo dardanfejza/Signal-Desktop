@@ -71,6 +71,16 @@ function renderToast({
 
   const { toastType } = toast;
 
+  if (toastType === ToastType.AiCommandFailed) {
+    return (
+      <Toast onClose={hideToast}>
+        {i18n('icu:AiCommands__toast-failed', {
+          error: toast.parameters.error,
+        })}
+      </Toast>
+    );
+  }
+
   if (toastType === ToastType.AddingUserToGroup) {
     return (
       <Toast onClose={hideToast} timeout={SHORT_TIMEOUT}>

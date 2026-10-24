@@ -12176,5 +12176,37 @@
   "icu:WhatsNew__8.32--2": {
     "messageformat": "The \"(N)\" shortcut correctly points to the thumbs down emoji. Thumbs up to <lnicola></lnicola> for the bugfix.",
     "description": "(Deleted 2026/10/20) Release notes for 8.32"
+  },
+  "icu:AiCommands__menu-label": {
+    "messageformat": "AI commands",
+    "description": "Composer > AI commands (fork feature) > accessibility label and tooltip for the menu button next to the microphone"
+  },
+  "icu:AiCommands__edit": {
+    "messageformat": "Edit commands…",
+    "description": "Composer > AI commands > menu item that opens the JSON config file"
+  },
+  "icu:AiCommands__level-loading": {
+    "messageformat": "Reading the recent conversation…",
+    "description": "Composer > AI commands > placeholder description shown on each intensity level while the model is generating the scale"
+  },
+  "icu:AiCommands__level-placeholder": {
+    "messageformat": "Level {level}",
+    "description": "Composer > AI commands > placeholder title for an intensity level before the model has named it"
+  },
+  "icu:AiCommands__scale-model": {
+    "messageformat": "Scale written from this chat's recent messages",
+    "description": "Composer > AI commands > footer of the level picker when the model produced the descriptions"
+  },
+  "icu:AiCommands__scale-generic": {
+    "messageformat": "Generic scale (model unavailable)",
+    "description": "Composer > AI commands > footer of the level picker when a fallback scale is shown"
+  },
+  "icu:AiCommands__pending": {
+    "messageformat": "Writing…",
+    "description": "Composer > AI commands > tooltip while a command is running"
+  },
+  "icu:AiCommands__toast-failed": {
+    "messageformat": "AI command failed: {error}",
+    "description": "Toast shown when an AI command could not be completed. {error} is the technical reason."
   }
 }
